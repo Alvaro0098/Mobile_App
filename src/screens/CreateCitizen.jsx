@@ -70,8 +70,8 @@ const CreateCitizen = ({ navigation }) => {
       newErrors.phone = 'El teléfono debe ser un número positivo (no se aceptan negativos).';
     } else if (!onlyNumbers.test(phone.trim())) {
       newErrors.phone = 'El teléfono solo puede contener números.';
-    } else if (phone.trim().length > 10) {
-      newErrors.phone = 'El teléfono no puede tener más de 10 dígitos';
+    } else if (phone.trim().length !== 10) {
+      newErrors.phone = 'El teléfono debe tener exactamente 10 dígitos';
     }
 
     setErrors(newErrors);
