@@ -320,18 +320,64 @@ const EditIncidence = ({ navigation, route }) => {
           )}
         </View>
 
-        {/* Área (Deshabilitada en edición) */}
+        {/* Área */}
         <View style={styles.section}>
           <Text style={styles.label}>
             Área Responsable <Text style={styles.required}>*</Text>
           </Text>
-          <View style={styles.disabledDropdown}>
-            <Text style={styles.disabledText}>
+          <TouchableOpacity
+            style={styles.dropdown}
+            onPress={() => {
+              setShowAreaDropdown(!showAreaDropdown);
+              setShowTipoDropdown(false);
+              setShowEstadoDropdown(false);
+            }}
+          >
+            <Text style={styles.dropdownText}>
               {getSelectedAreaLabel()}
             </Text>
-            <MaterialCommunityIcons name="lock" size={16} color="#999" />
-          </View>
-          <Text style={styles.helperText}>No se puede cambiar el área en edición</Text>
+            <MaterialCommunityIcons
+              name={showAreaDropdown ? 'chevron-up' : 'chevron-down'}
+              size={20}
+              color="#666"
+            />
+          </TouchableOpacity>
+
+          {showAreaDropdown && (
+            <View style={styles.dropdownList}>
+              {loadingAreas ? (
+                <View style={styles.dropdownItem}>
+                  <Text style={styles.dropdownItemText}>Cargando áreas...</Text>
+                </View>
+              ) : (
+                areas.map((area) => (
+                  <TouchableOpacity
+                    key={area.id}
+                    style={[
+                      styles.dropdownItem,
+                      areaSelected === area.id.toString() && styles.selectedItem,
+                    ]}
+                    onPress={() => {
+                      setAreaSelected(area.id.toString());
+                      setShowAreaDropdown(false);
+                    }}
+                  >
+                    <Text
+                      style={[
+                        styles.dropdownItemText,
+                        areaSelected === area.id.toString() && styles.selectedItemText,
+                      ]}
+                    >
+                      {area.name}
+                    </Text>
+                  </TouchableOpacity>
+                ))
+              )}
+            </View>
+          )}
+          {errors.area && (
+            <Text style={styles.errorText}>{errors.area}</Text>
+          )}
         </View>
 
         {/* Observación */}
@@ -476,28 +522,6 @@ const styles = StyleSheet.create({
   selectedItemText: {
     color: '#428bc4',
     fontWeight: '600',
-  },
-  disabledDropdown: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  disabledText: {
-    fontSize: 14,
-    color: '#666',
-    flex: 1,
-  },
-  helperText: {
-    fontSize: 12,
-    color: '#999',
-    marginTop: 6,
-    fontStyle: 'italic',
   },
   textArea: {
     backgroundColor: 'white',
