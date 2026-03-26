@@ -45,8 +45,8 @@ const CreateOperator = ({ navigation }) => {
       newErrors.dni = 'El DNI debe ser un número positivo (no se aceptan negativos).';
     } else if (!onlyNumbers.test(dni.trim())) {
       newErrors.dni = 'El DNI solo puede contener números.';
-    } else if (dni.trim().length > 8) {
-      newErrors.dni = 'El DNI no puede superar 8 dígitos';
+    } else if (dni.trim().length > 10) {
+      newErrors.dni = 'El DNI no puede tener más de 10 dígitos';
     }
 
     // Name
@@ -85,8 +85,15 @@ const CreateOperator = ({ navigation }) => {
     }
 
     // Phone (opcional pero validar si se proporciona)
-    if (phone && phone.length > 8) {
-      newErrors.phone = 'El celular no puede tener más de 8 dígitos';
+    if (phone && phone.trim().length > 0) {
+      const onlyNumbers = /^[0-9]+$/;
+      if (phone.includes('-')) {
+        newErrors.phone = 'El teléfono debe ser un número positivo (no se aceptan negativos).';
+      } else if (!onlyNumbers.test(phone.trim())) {
+        newErrors.phone = 'El teléfono solo puede contener números.';
+      } else if (phone.trim().length > 10) {
+        newErrors.phone = 'El teléfono no puede tener más de 10 dígitos';
+      }
     }
 
     setErrors(newErrors);

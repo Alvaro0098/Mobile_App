@@ -69,6 +69,8 @@ const EditCitizen = ({ navigation, route }) => {
       newErrors.lastName = 'El apellido es obligatorio';
     }
 
+    // DN I is read-only in edit form; skipping DNI validation here
+
     // Email es obligatorio y debe tener formato válido
     if (!email || email.trim().length === 0) {
       newErrors.email = 'El email es obligatorio';
@@ -88,6 +90,8 @@ const EditCitizen = ({ navigation, route }) => {
       newErrors.phone = 'El teléfono debe ser un número positivo (no se aceptan negativos).';
     } else if (!onlyNumbers.test(phone.trim())) {
       newErrors.phone = 'El teléfono solo puede contener números.';
+    } else if (phone.trim().length > 10) {
+      newErrors.phone = 'El teléfono no puede tener más de 10 dígitos';
     }
 
     setErrors(newErrors);
