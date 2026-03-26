@@ -14,6 +14,7 @@ import LoginMobile from './src/screens/LoginMobile';
 import Incidence from './src/screens/Incidence';
 import CreateIncidence from './src/screens/CreateIncidence';
 import EditIncidence from './src/screens/EditIncidence';
+import DeletedIncidence from './src/screens/DeletedIncidence';
 import Citizen from './src/screens/Citizen';
 import CreateCitizen from './src/screens/CreateCitizen';
 import EditCitizen from './src/screens/EditCitizen';
@@ -55,6 +56,13 @@ function IncidenceStackNavigator() {
       <Stack.Screen
         name="EditIncidence"
         component={EditIncidence}
+        options={{
+          animationEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="DeletedIncidenceList"
+        component={DeletedIncidence}
         options={{
           animationEnabled: true,
         }}

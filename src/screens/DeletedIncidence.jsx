@@ -14,7 +14,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import TopBar from '../components/TopBar';
 import { useAuth } from '../hooks/useAuth';
-import { getIncidences, deleteIncidence } from '../services/incidenceService';
+import { getDeletedIncidences, restoreIncidence } from '../services/incidenceService';
 
 /**
  * Mapeo de tipos de incidencia
@@ -30,9 +30,6 @@ const TIPO_MAP = {
 
 /**
  * Mapeo de estados con colores
- * 0: Iniciado (Gris)
- * 1: En progreso (Azul)
- * 2: Finalizado (Verde)
  */
 const ESTADO_MAP = {
   0: { label: 'Iniciado', color: '#6c757d' },
@@ -40,41 +37,40 @@ const ESTADO_MAP = {
   2: { label: 'Finalizado', color: '#198754' },
 };
 
-const Incidence = ({ navigation }) => {
+const DeletedIncidence = ({ navigation }) => {
   const { tokenStatus, logout } = useAuth();
   const [incidences, setIncidences] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState(null);
 
-  // Cargar incidencias al montar el componente
+  // Cargar incidencias eliminadas al montar el componente
   useEffect(() => {
-    loadIncidences();
+    loadDeletedIncidences();
   }, []);
 
   /**
-   * Recargar incidencias cuando la pantalla gana focus
-   * (ej: al volver desde CreateIncidence)
+   * Recargar incidencias eliminadas cuando la pantalla gana focus
    */
   useFocusEffect(
     useCallback(() => {
-      loadIncidences();
+      loadDeletedIncidences();
     }, [])
   );
 
   /**
-   * Cargar incidencias desde la API
+   * Cargar incidencias eliminadas desde la API
    */
-  const loadIncidences = async () => {
+  const loadDeletedIncidences = async () => {
     try {
       setLoading(true);
       setError(null);
-      const data = await getIncidences();
+      const data = await getDeletedIncidences();
       setIncidences(data || []);
     } catch (error) {
-      console.error('Error cargando incidencias:', error);
+      console.error('Error cargando incidencias eliminadas:', error);
       const errorMessage = error.message || 'Error desconocido';
-      
+
       // Si es error 401, mostrar mensaje específico
       if (errorMessage.includes('401')) {
         setError('🔓 No autenticado: Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
@@ -94,12 +90,12 @@ const Incidence = ({ navigation }) => {
     setRefreshing(true);
     setError(null);
     try {
-      const data = await getIncidences();
+      const data = await getDeletedIncidences();
       setIncidences(data || []);
     } catch (error) {
-      console.error('Error refrescando incidencias:', error);
+      console.error('Error refrescando incidencias eliminadas:', error);
       const errorMessage = error.message || 'Error desconocido';
-      
+
       if (errorMessage.includes('401')) {
         setError('🔓 No autenticado: Tu sesión ha expirado. Por favor, inicia sesión nuevamente.');
       } else {
@@ -123,36 +119,34 @@ const Incidence = ({ navigation }) => {
   };
 
   /**
-   * Manejar editar incidencia
+   * Manejar restaurar incidencia con confirmación
    */
-  const handleEdit = (incidence) => {
-    navigation.navigate('EditIncidence', { incidence });
-  };
+  const handleRestore = (incidence) => {
+    const operatorName =
+      incidence.operator && incidence.operator.name
+        ? `${incidence.operator.name} ${incidence.operator.lastName || ''}`
+        : `Operador ID: ${incidence.operatorId}`;
 
-  /**
-   * Manejar eliminar incidencia con confirmación
-   */
-  const handleDelete = (incidence) => {
     Alert.alert(
-      'Eliminar Incidencia',
-      `¿Estás seguro que deseas eliminar la incidencia ID ${incidence.id}?`,
+      '¿Restaurar Incidencia?',
+      `Se restaurará la incidencia con ID: ${incidence.id}\nOperador responsable: ${operatorName}`,
       [
         {
-          text: 'Cancelar',
+          text: 'No',
           style: 'cancel',
         },
         {
-          text: 'Eliminar',
-          style: 'destructive',
+          text: 'Sí, restaurar',
+          style: 'default',
           onPress: async () => {
             try {
-              await deleteIncidence(incidence.id);
-              Alert.alert('Éxito', 'Incidencia eliminada correctamente');
-              // Recargar la lista después de eliminar
+              await restoreIncidence(incidence.id);
+              Alert.alert('Éxito', '¡Incidencia restaurada exitosamente!');
+              // Recargar la lista después de restaurar
               await onRefresh();
             } catch (error) {
-              console.error('Error eliminando incidencia:', error);
-              Alert.alert('Error', 'No se pudo eliminar la incidencia');
+              console.error('Error restaurando incidencia:', error);
+              Alert.alert('Error', error.message || 'No se pudo restaurar la incidencia');
             }
           },
         },
@@ -161,9 +155,9 @@ const Incidence = ({ navigation }) => {
   };
 
   /**
-   * Componente de Card para cada incidencia
+   * Componente de Card para cada incidencia eliminada
    */
-  const IncidenceCard = ({ item }) => {
+  const DeletedIncidenceCard = ({ item }) => {
     const estadoInfo = ESTADO_MAP[item.state];
     const tipoLabel = TIPO_MAP[item.incidenceType] || `Tipo ${item.incidenceType}`;
     const areaName = item.area?.name || `Área ID: ${item.areaId}`;
@@ -211,22 +205,15 @@ const Incidence = ({ navigation }) => {
           <Text style={styles.value}>{operatorName}</Text>
         </View>
 
-        {/* Acciones (Editar / Eliminar) */}
+        {/* Acciones (Restaurar) */}
         <View style={styles.cardActions}>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleEdit(item)}
+          <TouchableOpacity
+            style={[styles.actionButton, styles.restoreButton]}
+            onPress={() => handleRestore(item)}
           >
-            <MaterialIcons name="edit" size={18} color="#0d6efd" />
-            <Text style={styles.actionButtonText}>Editar</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.actionButton}
-            onPress={() => handleDelete(item)}
-          >
-            <MaterialIcons name="delete" size={18} color="#dc3545" />
-            <Text style={[styles.actionButtonText, { color: '#dc3545' }]}>
-              Eliminar
+            <MaterialCommunityIcons name="restore" size={18} color="#198754" />
+            <Text style={[styles.actionButtonText, { color: '#198754' }]}>
+              Restaurar
             </Text>
           </TouchableOpacity>
         </View>
@@ -239,8 +226,8 @@ const Incidence = ({ navigation }) => {
    */
   const renderEmpty = () => (
     <View style={styles.emptyContainer}>
-      <MaterialIcons name="inbox" size={48} color="#ccc" />
-      <Text style={styles.emptyText}>No hay incidencias registradas</Text>
+      <MaterialCommunityIcons name="trash-can-outline" size={48} color="#ccc" />
+      <Text style={styles.emptyText}>No hay incidencias eliminadas</Text>
     </View>
   );
 
@@ -254,7 +241,7 @@ const Incidence = ({ navigation }) => {
         <MaterialIcons name="lock" size={56} color="#dc3545" />
         <Text style={styles.errorTitle}>Error de Autenticación</Text>
         <Text style={styles.errorMessage}>{error}</Text>
-        
+
         {tokenStatus.error && (
           <View style={styles.debugBox}>
             <Text style={styles.debugTitle}>🔍 Información de Debug:</Text>
@@ -274,7 +261,7 @@ const Incidence = ({ navigation }) => {
 
         <TouchableOpacity
           style={styles.retryButtonSecondary}
-          onPress={() => loadIncidences()}
+          onPress={() => loadDeletedIncidences()}
         >
           <Text style={styles.retryButtonSecondaryText}>Reintentar</Text>
         </TouchableOpacity>
@@ -285,7 +272,19 @@ const Incidence = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <TopBar />
-      
+
+      {/* Header personalizado */}
+      <View style={styles.headerContainer}>
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          style={styles.backButton}
+        >
+          <MaterialIcons name="arrow-back" size={24} color="#428bc4" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Incidencias Eliminadas</Text>
+        <View style={{ width: 40 }} />
+      </View>
+
       {error && renderAuthError()}
       {!error && loading ? (
         <View style={styles.centerContainer}>
@@ -295,7 +294,7 @@ const Incidence = ({ navigation }) => {
         <FlatList
           data={incidences}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => <IncidenceCard item={item} />}
+          renderItem={({ item }) => <DeletedIncidenceCard item={item} />}
           contentContainerStyle={styles.listContent}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -303,27 +302,6 @@ const Incidence = ({ navigation }) => {
           ListEmptyComponent={renderEmpty()}
           showsVerticalScrollIndicator={false}
         />
-      )}
-      
-      {/* Floating Action Buttons */}
-      {!error && (
-        <>
-          <TouchableOpacity
-            style={styles.fab}
-            onPress={() => navigation.navigate('CreateIncidence')}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons name="plus" size={28} color="white" />
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.fabSecondary}
-            onPress={() => navigation.navigate('DeletedIncidenceList')}
-            activeOpacity={0.7}
-            title="Ver incidencias eliminadas"
-          >
-            <MaterialCommunityIcons name="trash-can-outline" size={24} color="white" />
-          </TouchableOpacity>
-        </>
       )}
     </View>
   );
@@ -338,6 +316,27 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#e0e0e0',
+  },
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
   },
   listContent: {
     paddingHorizontal: 12,
@@ -359,29 +358,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-    paddingBottom: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
   },
   dateTypeContainer: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
   },
   dateText: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: '#212529',
+    fontSize: 12,
+    color: '#666',
+    fontWeight: '500',
   },
   typeText: {
-    fontSize: 13,
+    fontSize: 12,
     color: '#666',
-    marginLeft: 8,
+    marginLeft: 4,
   },
   stateBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginLeft: 8,
   },
   stateBadgeText: {
     color: 'white',
@@ -390,169 +387,128 @@ const styles = StyleSheet.create({
   },
   cardRow: {
     flexDirection: 'row',
-    marginBottom: 10,
+    marginBottom: 8,
+    alignItems: 'flex-start',
   },
   label: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#212529',
-    minWidth: 80,
+    fontWeight: '600',
+    color: '#555',
+    marginRight: 8,
+    minWidth: 70,
   },
   value: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 8,
+    fontSize: 13,
+    color: '#333',
+    flex: 1,
   },
   cardActions: {
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 12,
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: '#e9ecef',
+    borderTopColor: '#f0f0f0',
+    gap: 8,
   },
   actionButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 6,
-    backgroundColor: '#f8f9fa',
-    gap: 6,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#ccc',
+  },
+  restoreButton: {
+    borderColor: '#198754',
   },
   actionButtonText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
     color: '#0d6efd',
   },
   emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 100,
+    justifyContent: 'center',
+    paddingVertical: 60,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#999',
     marginTop: 12,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#428bc4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
-  },
-  fabSecondary: {
-    position: 'absolute',
-    bottom: 85,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#6c757d',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 32,
+    paddingHorizontal: 20,
   },
   errorBox: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 24,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#dc3545',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    paddingVertical: 30,
   },
   errorTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#dc3545',
+    fontWeight: '700',
     marginTop: 12,
-    marginBottom: 8,
+    color: '#dc3545',
   },
   errorMessage: {
     fontSize: 14,
     color: '#666',
+    marginTop: 8,
     textAlign: 'center',
-    marginBottom: 16,
-    lineHeight: 20,
   },
   debugBox: {
     backgroundColor: '#f8f9fa',
     borderRadius: 8,
     padding: 12,
-    marginBottom: 16,
+    marginTop: 16,
     width: '100%',
-    borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
+    borderLeftWidth: 3,
+    borderLeftColor: '#dc3545',
   },
   debugTitle: {
     fontSize: 12,
-    fontWeight: 'bold',
-    color: '#212529',
+    fontWeight: '700',
+    color: '#333',
     marginBottom: 8,
   },
   debugText: {
-    fontSize: 12,
+    fontSize: 11,
     color: '#666',
     marginBottom: 4,
-    fontFamily: 'Courier',
   },
   retryButton: {
-    backgroundColor: '#428bc4',
-    borderRadius: 8,
-    paddingHorizontal: 24,
+    backgroundColor: '#dc3545',
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 16,
     width: '100%',
     alignItems: 'center',
-    marginBottom: 10,
   },
   retryButtonText: {
     color: 'white',
-    fontSize: 14,
     fontWeight: '600',
+    fontSize: 14,
   },
   retryButtonSecondary: {
-    backgroundColor: 'white',
-    borderRadius: 8,
-    paddingHorizontal: 24,
+    borderWidth: 1,
+    borderColor: '#dc3545',
+    paddingHorizontal: 20,
     paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 8,
     width: '100%',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#428bc4',
   },
   retryButtonSecondaryText: {
-    color: '#428bc4',
-    fontSize: 14,
+    color: '#dc3545',
     fontWeight: '600',
+    fontSize: 14,
   },
 });
 
-export default Incidence;
+export default DeletedIncidence;
