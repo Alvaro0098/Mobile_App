@@ -23,14 +23,19 @@ export const getCitizens = async () => {
 /**
  * Obtener un ciudadano por DNI
  * @param {string} dni - DNI del ciudadano
- * @returns {Promise<object>} - Datos del ciudadano
+ * @returns {Promise<object|null>} - Datos del ciudadano o null si no existe
  */
 export const getCitizenByDni = async (dni) => {
   try {
     const data = await get(`/Citizen/${dni}`);
     return data;
   } catch (error) {
-    // Relanzar sin console.error para no interferir
+    // Si el error es "no encontrado" (404), retornar null sin relanzar
+    const errorMsg = error.message || '';
+    if (errorMsg.toLowerCase().includes('encontr') || errorMsg.toLowerCase().includes('not found')) {
+      return null;
+    }
+    // Para otros errores, relanzar para que se maneje como error real
     throw error;
   }
 };
@@ -38,9 +43,9 @@ export const getCitizenByDni = async (dni) => {
 /**
  * Crear un nuevo ciudadano
  * @param {object} formData - Datos del formulario
+ * @param {number} formData.dni - DNI (identificador único, int de 8 dígitos)
  * @param {string} formData.name - Nombre
  * @param {string} formData.lastName - Apellido
- * @param {string} formData.dni - DNI (identificador único)
  * @param {string} formData.email - Email
  * @param {string} formData.adress - Dirección
  * @param {string} formData.phone - Teléfono/Celular
@@ -74,7 +79,7 @@ export const createCitizen = async (formData) => {
  */
 export const updateCitizen = async (dni, formData) => {
   try {
-    // Mapeo idéntico al del desktop (sin DNI en update, solo name, lastName, email, adress, phone)
+    // Mapeo idéntico al del desktop
     const dtoData = {
       Name: formData.name,
       LastName: formData.lastName,

@@ -45,8 +45,8 @@ const CreateOperator = ({ navigation }) => {
       newErrors.dni = 'El DNI debe ser un número positivo (no se aceptan negativos).';
     } else if (!onlyNumbers.test(dni.trim())) {
       newErrors.dni = 'El DNI solo puede contener números.';
-    } else if (dni.trim().length > 10) {
-      newErrors.dni = 'El DNI no puede tener más de 10 dígitos';
+    } else if (dni.trim().length < 7 || dni.trim().length > 8) {
+      newErrors.dni = 'El DNI debe tener entre 7 y 8 dígitos';
     }
 
     // Name
@@ -221,11 +221,12 @@ const CreateOperator = ({ navigation }) => {
           </Text>
           <TextInput
             style={[styles.input, errors.nLegajo && styles.inputError]}
-            placeholder="Número de legajo (mín 4 dígitos)"
+            placeholder="Número de legajo (mín 4, máx 8 dígitos)"
             placeholderTextColor="#999"
             keyboardType="number-pad"
             value={nLegajo}
             onChangeText={setNLegajo}
+            maxLength={8}
           />
           {errors.nLegajo && (
             <Text style={styles.errorText}>{errors.nLegajo}</Text>

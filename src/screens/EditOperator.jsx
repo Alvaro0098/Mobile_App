@@ -31,6 +31,7 @@ const EditOperator = ({ navigation, route }) => {
   const [initialState, setInitialState] = useState({
     name: operator.name || '',
     lastName: operator.lastName || '',
+    nLegajo: operator.nLegajo?.toString() || '',
     email: operator.email || '',
     phone: operator.phone || '',
     password: '', // La contraseña siempre comienza vacía en EDIT
@@ -54,6 +55,7 @@ const EditOperator = ({ navigation, route }) => {
     return (
       name !== initialState.name ||
       lastName !== initialState.lastName ||
+      nLegajo !== initialState.nLegajo ||
       email !== initialState.email ||
       phone !== initialState.phone ||
       password !== initialState.password ||
@@ -92,6 +94,8 @@ const EditOperator = ({ navigation, route }) => {
       }
     }
 
+    // N° Legajo - READ ONLY, no validar
+    
     // Phone (opcional pero si se proporciona, debe ser válido)
     if (phone && phone.trim().length > 0) {
       const onlyNumbers = /^[0-9]+$/;
@@ -129,8 +133,8 @@ const EditOperator = ({ navigation, route }) => {
         name: name.trim(),
         lastName: lastName.trim(),
         email: email.trim(),
-        phone: phone.trim(), // String vacío si no ingresó (el servicio lo maneja)
-        password: password.trim(), // String vacío si no ingresó (servicio aplicará default)
+        phone: phone.trim(), // String vacío si no ingresó (el servicio lo omite)
+        password: password.trim(), // String vacío si no ingresó (el servicio lo omite, preservando la existente)
         position: Number(position),
       };
 
@@ -150,11 +154,6 @@ const EditOperator = ({ navigation, route }) => {
         setErrors(prevErrors => ({
           ...prevErrors,
           dni: 'Este DNI ya está registrado.',
-        }));
-      } else if (errorMessage.includes('Ya existe un operador con N° de Legajo')) {
-        setErrors(prevErrors => ({
-          ...prevErrors,
-          nLegajo: 'Este N° de Legajo ya está registrado.',
         }));
       } else {
         Alert.alert('Error', errorMessage || 'No se pudo actualizar el operador');
@@ -259,13 +258,13 @@ const EditOperator = ({ navigation, route }) => {
           {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
         </View>
 
-        {/* Contraseña - Opcional, pero Backend requiere valor */}
+        {/* Contraseña - Opcional, si está vacía se preserva la contraseña actual */}
         <View style={styles.section}>
           <Text style={styles.label}>Contraseña</Text>
           <View style={[styles.passwordInputContainer, errors.password && styles.inputError]}>
             <TextInput
               style={styles.passwordInput}
-              placeholder="Dejar vacío para usar contraseña por defecto"
+              placeholder="Dejar vacío para mantener contraseña actual"
               placeholderTextColor="#999"
               secureTextEntry={!showPassword}
               value={password}
@@ -286,7 +285,7 @@ const EditOperator = ({ navigation, route }) => {
             <Text style={styles.errorText}>{errors.password}</Text>
           )}
           <Text style={styles.optionalNote}>
-            Si dejas vacío: se usará "Password123!" como contraseña. Para cambiar: min 8 caracteres (mayúscula, minúscula, número)
+            Si dejas vacío: se preservará la contraseña actual. Para cambiar: min 8 caracteres (mayúscula, minúscula, número)
           </Text>
         </View>
 

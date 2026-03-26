@@ -100,12 +100,11 @@ const CreateIncidence = ({ navigation }) => {
 
   // Manejar cambio de fecha
   const handleDateChange = (event, selectedDate) => {
-    if (Platform.OS === 'android') {
-      setShowDatePicker(false);
-    }
     if (selectedDate) {
       setDate(selectedDate);
     }
+    // Cierra el datepicker después de seleccionar en ambas plataformas
+    setShowDatePicker(false);
   };
 
   // Guardar incidencia
@@ -162,7 +161,7 @@ const CreateIncidence = ({ navigation }) => {
             Fecha <Text style={styles.required}>*</Text>
           </Text>
           <TouchableOpacity
-            style={styles.dateButton}
+            style={[styles.dateButton, errors.date && styles.dateButtonError]}
             onPress={() => setShowDatePicker(true)}
           >
             <MaterialCommunityIcons name="calendar" size={20} color="#428bc4" />
@@ -182,6 +181,10 @@ const CreateIncidence = ({ navigation }) => {
               display={Platform.OS === 'ios' ? 'spinner' : 'default'}
               onChange={handleDateChange}
             />
+          )}
+
+          {errors.date && (
+            <Text style={styles.errorText}>{errors.date}</Text>
           )}
         </View>
 
@@ -442,6 +445,10 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ddd',
     gap: 10,
+  },
+  dateButtonError: {
+    borderColor: '#dc3545',
+    borderWidth: 1.5,
   },
   dateButtonText: {
     fontSize: 14,

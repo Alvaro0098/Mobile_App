@@ -47,8 +47,8 @@ const CreateCitizen = ({ navigation }) => {
       newErrors.dni = 'El DNI debe ser un número positivo (no se aceptan negativos).';
     } else if (!onlyNumbers.test(dni.trim())) {
       newErrors.dni = 'El DNI solo puede contener números.';
-    } else if (dni.trim().length > 10) {
-      newErrors.dni = 'El DNI no puede tener más de 10 dígitos';
+    } else if (dni.trim().length < 7 || dni.trim().length > 8) {
+      newErrors.dni = 'El DNI debe tener entre 7 y 8 dígitos';
     }
 
     // Email es obligatorio y debe tener formato válido
@@ -174,11 +174,12 @@ const CreateCitizen = ({ navigation }) => {
           </Text>
           <TextInput
             style={[styles.input, errors.dni && styles.inputError]}
-            placeholder="Número de DNI"
+            placeholder="Número de DNI (7-8 dígitos)"
             placeholderTextColor="#999"
             keyboardType="number-pad"
             value={dni}
             onChangeText={setDni}
+            maxLength={8}
           />
           {errors.dni && <Text style={styles.errorText}>{errors.dni}</Text>}
         </View>

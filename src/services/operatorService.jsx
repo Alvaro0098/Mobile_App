@@ -79,23 +79,31 @@ export const createOperator = async (formData) => {
  * @param {string} formData.lastName - Apellido (Required)
  * @param {string} formData.email - Email (Required)
  * @param {string} formData.phone - Teléfono (opcional)
- * @param {string} formData.password - Contraseña (Required, pero si estaba vacía usar default)
+ * @param {string} formData.password - Contraseña (opcional, solo enviar si se proporciona)
  * @param {number} formData.position - Role: 0=OperatorBasic, 1=Admin, 2=SysAdmin
  * @returns {Promise<object>} - Operador actualizado
  */
 export const updateOperator = async (dni, formData) => {
   try {
+    // Mapeo de numbers a enum names
+    const positionMap = {
+      0: 'OperatorBasic',
+      1: 'Admin',
+      2: 'SysAdmin'
+    };
+
     // Mapeo idéntico al UpdateOperatorDto del backend
-    // IMPORTANTE: Password es [Required] en el DTO, así que si está vacío, enviar default como Desktop
+    // Password es [MinLength(8)] en el DTO (no Required), así que podemos enviarlo vacío/omitirlo
+    // NLegajo es una clave primaria y no puede ser modificada
     const dtoData = {
       name: String(formData.name),
       lastName: String(formData.lastName),
       email: String(formData.email),
-      // Si password está vacío, usar default "Password123!" (como hace Desktop)
-      password: String(formData.password || 'Password123!'),
+      // Solo incluir password si se proporciona (no vacío) - el backend preservará la contraseña existente
+      ...(formData.password && formData.password.trim().length > 0 && { password: String(formData.password) }),
       // Phone es opcional, solo incluir si tiene valor
       ...(formData.phone && formData.phone.trim().length > 0 && { phone: String(formData.phone) }),
-      position: Number(formData.position),
+      position: positionMap[formData.position] || 'OperatorBasic',
     };
 
     const response = await put(`/Operator/${dni}`, dtoData);
