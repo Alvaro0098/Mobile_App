@@ -46,9 +46,9 @@ const CitizenSearch = ({ navigation }) => {
    * Buscar ciudadano por DNI
    */
   const handleSearch = async () => {
-    // Validación mínima
-    if (dni.length < 6) {
-      setError('El DNI debe tener al menos 6 dígitos.');
+    // Validación mínima - 7-8 dígitos
+    if (dni.length < 7 || dni.length > 8) {
+      setError('El DNI debe tener entre 7 y 8 dígitos.');
       return;
     }
 
@@ -104,9 +104,9 @@ const CitizenSearch = ({ navigation }) => {
               editable={!loading}
             />
             <TouchableOpacity
-              style={[styles.searchBtn, loading || dni.length < 6 ? styles.disabled : null]}
+              style={[styles.searchBtn, loading || dni.length < 7 || dni.length > 8 ? styles.disabled : null]}
               onPress={handleSearch}
-              disabled={loading || dni.length < 6}
+              disabled={loading || dni.length < 7 || dni.length > 8}
             >
               {loading ? (
                 <ActivityIndicator size="small" color="white" />
@@ -128,7 +128,7 @@ const CitizenSearch = ({ navigation }) => {
 
           {/* Indicador de longitud */}
           <View style={styles.lengthIndicator}>
-            <Text style={[styles.lengthText, dni.length >= 6 ? styles.lengthValid : null]}>
+            <Text style={[styles.lengthText, dni.length >= 7 && dni.length <= 8 ? styles.lengthValid : null]}>
               {dni.length} / 8 dígitos
             </Text>
           </View>
