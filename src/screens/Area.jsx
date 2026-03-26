@@ -76,7 +76,7 @@ const Area = ({ navigation }) => {
               await onRefresh();
             } catch (error) {
               console.error('Error eliminando área:', error);
-              Alert.alert('Error', 'No se pudo eliminar el área');
+              Alert.alert('Error', error.message || 'No se pudo eliminar el área');
             }
           },
         },

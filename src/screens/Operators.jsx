@@ -19,24 +19,16 @@ const Operators = ({ navigation }) => {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Cargar operadores al montar el componente
   useEffect(() => {
     loadOperators();
   }, []);
 
-  /**
-   * Recargar operadores cuando la pantalla gana focus
-   * (ej: al volver desde CreateOperator o EditOperator)
-   */
   useFocusEffect(
     useCallback(() => {
       loadOperators();
     }, [])
   );
 
-  /**
-   * Cargar operadores desde la API
-   */
   const loadOperators = async () => {
     try {
       setLoading(true);
@@ -49,9 +41,6 @@ const Operators = ({ navigation }) => {
     }
   };
 
-  /**
-   * Manejar el pull-to-refresh
-   */
   const onRefresh = async () => {
     setRefreshing(true);
     try {
@@ -64,9 +53,6 @@ const Operators = ({ navigation }) => {
     }
   };
 
-  /**
-   * Manejar editar operador
-   */
   const handleEdit = (operator) => {
     navigation.navigate('EditOperator', { operator });
   };
@@ -96,7 +82,7 @@ const Operators = ({ navigation }) => {
               await onRefresh();
             } catch (error) {
               console.error('Error eliminando operador:', error);
-              Alert.alert('Error', 'No se pudo eliminar el operador');
+              Alert.alert('Error', error.message || 'No se pudo eliminar el operador');
             }
           },
         },
@@ -120,126 +106,97 @@ const Operators = ({ navigation }) => {
           <Text style={styles.nameText}>{fullName}</Text>
         </View>
 
-        {/* Legajo */}
-        <View style={styles.cardRow}>
-          <MaterialCommunityIcons
-            name="identifier"
-            size={16}
-            color="#428bc4"
-            style={styles.icon}
-          />
-          <Text style={styles.label}>Legajo:</Text>
-          <Text style={styles.value}>{nLegajo}</Text>
+        {/* Detalle 1: DNI */}
+        <View style={styles.detailRow}>
+          <MaterialCommunityIcons name="id-card" size={18} color="#666" />
+          <Text style={styles.detailLabel}>DNI:</Text>
+          <Text style={styles.detailValue}>{item.dni}</Text>
         </View>
 
-        {/* Email */}
-        <View style={styles.cardRow}>
-          <MaterialCommunityIcons
-            name="email"
-            size={16}
-            color="#428bc4"
-            style={styles.icon}
-          />
-          <Text style={styles.label}>Email:</Text>
-          <Text style={[styles.value, { flex: 1 }]} numberOfLines={1}>
-            {email}
-          </Text>
+        {/* Detalle 2: N° de Legajo */}
+        <View style={styles.detailRow}>
+          <MaterialCommunityIcons name="file-document" size={18} color="#666" />
+          <Text style={styles.detailLabel}>N° Legajo:</Text>
+          <Text style={styles.detailValue}>{nLegajo}</Text>
         </View>
 
-        {/* Cargo/Rol */}
-        <View style={styles.cardRow}>
-          <MaterialCommunityIcons
-            name="briefcase"
-            size={16}
-            color="#428bc4"
-            style={styles.icon}
-          />
-          <Text style={styles.label}>Cargo:</Text>
-          <Text style={styles.value}>
-            {position === 'SysAdmin'
-              ? 'SuperAdmin'
-              : position === 'Admin'
-              ? 'Admin'
-              : 'Básico'}
-          </Text>
+        {/* Detalle 3: Email */}
+        <View style={styles.detailRow}>
+          <MaterialCommunityIcons name="email" size={18} color="#666" />
+          <Text style={styles.detailLabel}>Email:</Text>
+          <Text style={styles.detailValue}>{email}</Text>
         </View>
 
-        {/* Teléfono */}
-        {item.phone && (
-          <View style={styles.cardRow}>
-            <MaterialCommunityIcons
-              name="phone"
-              size={16}
-              color="#428bc4"
-              style={styles.icon}
-            />
-            <Text style={styles.label}>Tel:</Text>
-            <Text style={styles.value}>{item.phone}</Text>
+        {/* Detalle 4: Cargo */}
+        <View style={styles.detailRow}>
+          <MaterialCommunityIcons name="briefcase" size={18} color="#666" />
+          <Text style={styles.detailLabel}>Cargo:</Text>
+          <View style={[styles.positionBadge, { backgroundColor: getPositionColor(position) }]}>
+            <Text style={styles.positionText}>{position}</Text>
           </View>
-        )}
+        </View>
 
-        {/* Acciones (Editar / Eliminar) */}
+        {/* Acciones */}
         <View style={styles.cardActions}>
           <TouchableOpacity
-            style={styles.actionButton}
+            style={styles.editButton}
             onPress={() => handleEdit(item)}
           >
-            <MaterialIcons name="edit" size={18} color="#0d6efd" />
-            <Text style={styles.actionButtonText}>Editar</Text>
+            <MaterialIcons name="edit" size={20} color="#007AFF" />
+            <Text style={styles.actionText}>Editar</Text>
           </TouchableOpacity>
+
           <TouchableOpacity
-            style={styles.actionButton}
+            style={styles.deleteButton}
             onPress={() => handleDelete(item)}
           >
-            <MaterialIcons name="delete" size={18} color="#dc3545" />
-            <Text style={[styles.actionButtonText, { color: '#dc3545' }]}>
-              Eliminar
-            </Text>
+            <MaterialIcons name="delete" size={20} color="#DC3545" />
+            <Text style={[styles.actionText, { color: '#DC3545' }]}>Eliminar</Text>
           </TouchableOpacity>
         </View>
       </View>
     );
   };
 
-  /**
-   * Renderizar lista vacía
-   */
-  const renderEmpty = () => (
-    <View style={styles.emptyContainer}>
-      <MaterialIcons name="account-tie" size={48} color="#ccc" />
-      <Text style={styles.emptyText}>No hay operadores registrados</Text>
-    </View>
-  );
+  const getPositionColor = (position) => {
+    switch (position?.toLowerCase()) {
+      case 'sysadmin':
+        return '#DC3545';
+      case 'admin':
+        return '#FFC107';
+      default:
+        return '#17A2B8';
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <TopBar />
+        <View style={styles.centerContent}>
+          <ActivityIndicator size="large" color="#428bc4" />
+        </View>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.container}>
       <TopBar />
-      {loading ? (
-        <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#428bc4" />
-        </View>
-      ) : (
-        <FlatList
-          data={operators}
-          keyExtractor={(item) => (item.dni || item.nLegajo || Math.random()).toString()}
-          renderItem={({ item }) => <OperatorCard item={item} />}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={renderEmpty()}
-          showsVerticalScrollIndicator={false}
-        />
-      )}
-
-      {/* Floating Action Button */}
-      <TouchableOpacity
-        style={styles.fab}
-        onPress={() => navigation.navigate('CreateOperator')}
-        activeOpacity={0.7}
-      >
-        <MaterialCommunityIcons name="plus" size={28} color="white" />
-      </TouchableOpacity>
+      <FlatList
+        data={operators}
+        renderItem={({ item }) => <OperatorCard item={item} />}
+        keyExtractor={(item) => item.dni.toString()}
+        contentContainerStyle={styles.listContent}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+        ListEmptyMessage={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>No hay operadores</Text>
+          </View>
+        }
+      />
     </View>
   );
 };
@@ -249,109 +206,103 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
-  centerContainer: {
+  centerContent: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
   },
   listContent: {
     paddingHorizontal: 12,
-    paddingVertical: 12,
+    paddingVertical: 8,
   },
   card: {
-    backgroundColor: 'white',
-    borderRadius: 12,
-    padding: 16,
+    backgroundColor: '#fff',
+    borderRadius: 8,
     marginBottom: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 4,
     elevation: 3,
   },
   cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     marginBottom: 12,
-    paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
+    paddingBottom: 8,
   },
   nameText: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#212529',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  detailLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: '#666',
+    marginLeft: 8,
+    minWidth: 80,
+  },
+  detailValue: {
+    fontSize: 13,
+    color: '#333',
     flex: 1,
   },
-  cardRow: {
-    flexDirection: 'row',
-    marginBottom: 10,
-    alignItems: 'center',
+  positionBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
   },
-  icon: {
-    marginRight: 8,
-  },
-  label: {
+  positionText: {
+    color: '#fff',
     fontSize: 12,
-    fontWeight: '700',
-    color: '#212529',
-    minWidth: 70,
-  },
-  value: {
-    fontSize: 12,
-    color: '#666',
-    marginLeft: 4,
+    fontWeight: '600',
   },
   cardActions: {
     flexDirection: 'row',
-    justifyContent: 'flex-end',
-    gap: 12,
+    justifyContent: 'space-around',
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
     borderTopColor: '#e9ecef',
   },
-  actionButton: {
+  editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
     paddingVertical: 8,
+    paddingHorizontal: 12,
     borderRadius: 6,
-    backgroundColor: '#f8f9fa',
-    gap: 6,
+    backgroundColor: '#e7f3ff',
   },
-  actionButtonText: {
+  deleteButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    backgroundColor: '#ffe7e7',
+  },
+  actionText: {
+    color: '#007AFF',
     fontSize: 12,
     fontWeight: '600',
-    color: '#0d6efd',
+    marginLeft: 6,
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingBottom: 100,
+    paddingVertical: 40,
   },
   emptyText: {
     fontSize: 16,
     color: '#999',
-    marginTop: 12,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 20,
-    right: 20,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: '#428bc4',
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-    elevation: 5,
   },
 });
 
