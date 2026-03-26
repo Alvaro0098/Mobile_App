@@ -9,9 +9,9 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TopBar from '../components/TopBar';
+import PositionPicker from '../components/PositionPicker';
 import { createOperator } from '../services/operatorService';
 
 const CreateOperator = ({ navigation }) => {
@@ -36,14 +36,17 @@ const CreateOperator = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
     const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/;
+    const onlyNumbers = /^[0-9]+$/;
 
     // DNI
     if (!dni || dni.trim().length === 0) {
       newErrors.dni = 'El DNI es obligatorio';
+    } else if (dni.includes('-')) {
+      newErrors.dni = 'El DNI debe ser un número positivo (no se aceptan negativos).';
+    } else if (!onlyNumbers.test(dni.trim())) {
+      newErrors.dni = 'El DNI solo puede contener números.';
     } else if (dni.trim().length > 8) {
       newErrors.dni = 'El DNI no puede superar 8 dígitos';
-    } else if (isNaN(dni)) {
-      newErrors.dni = 'El DNI debe ser numérico';
     }
 
     // Name
@@ -59,10 +62,12 @@ const CreateOperator = ({ navigation }) => {
     // NLegajo
     if (!nLegajo || nLegajo.trim().length === 0) {
       newErrors.nLegajo = 'El N° de Legajo es obligatorio';
+    } else if (nLegajo.includes('-')) {
+      newErrors.nLegajo = 'El N° de Legajo debe ser un número positivo (no se aceptan negativos).';
+    } else if (!onlyNumbers.test(nLegajo.trim())) {
+      newErrors.nLegajo = 'El N° de Legajo solo puede contener números.';
     } else if (nLegajo.trim().length < 4) {
       newErrors.nLegajo = 'El legajo debe tener al menos 4 dígitos';
-    } else if (isNaN(nLegajo)) {
-      newErrors.nLegajo = 'El legajo debe ser numérico';
     }
 
     // Email
@@ -118,8 +123,26 @@ const CreateOperator = ({ navigation }) => {
         },
       ]);
     } catch (error) {
-      console.error('Error creando operador:', error);
-      Alert.alert('Error', 'No se pudo crear el operador');
+      // Detectar errores de validación del backend por palabra clave
+      const msg = error.message ? error.message.toLowerCase() : '';
+
+      if (msg.includes('legajo')) {
+        // ✅ Error de validación esperado - marcar campo sin Alert
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          nLegajo: 'Este N° de Legajo ya está en uso. Reintente.',
+        }));
+        // NO disparamos Alert aquí, ya lo mostramos en el input
+      } else if (msg.includes('dni')) {
+        // ✅ Error de validación esperado - marcar campo sin Alert
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          dni: 'Este DNI ya está registrado.',
+        }));
+      } else {
+        // Solo si es un error que no sabemos mapear (como un 500), mostramos el Alert
+        Alert.alert('Error', error.message || 'No se pudo crear el operador');
+      }
     } finally {
       setSaving(false);
     }
@@ -268,17 +291,11 @@ const CreateOperator = ({ navigation }) => {
           <Text style={styles.label}>
             Cargo / Rol <Text style={styles.required}>*</Text>
           </Text>
-          <View style={[styles.pickerContainer, errors.position && styles.inputError]}>
-            <Picker
-              selectedValue={position}
-              onValueChange={(itemValue) => setPosition(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Operador Básico" value="0" />
-              <Picker.Item label="Admin" value="1" />
-              <Picker.Item label="SysAdmin" value="2" />
-            </Picker>
-          </View>
+          <PositionPicker
+            value={position}
+            onValueChange={setPosition}
+            error={!!errors.position}
+          />
         </View>
 
         {/* Botones */}
@@ -384,10 +401,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   picker: {
-    height: 50,
+    height: 56,
+    fontSize: 14,
+    color: '#212529',
+  },
+  pickerItem: {
+    fontSize: 14,
+    color: '#212529',
   },
   buttonContainer: {
     flexDirection: 'row',

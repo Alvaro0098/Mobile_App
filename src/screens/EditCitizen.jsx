@@ -23,15 +23,43 @@ const EditCitizen = ({ navigation, route }) => {
   const [adress, setAdress] = useState(citizen.adress || '');
   const [phone, setPhone] = useState(citizen.phone || '');
 
+  // Initial state for change detection
+  const [initialState, setInitialState] = useState({
+    name: citizen.name,
+    lastName: citizen.lastName,
+    email: citizen.email || '',
+    adress: citizen.adress || '',
+    phone: citizen.phone || '',
+  });
+
   // UI state
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Limpiar errores al montar el componente
+  useEffect(() => {
+    setErrors({});
+  }, []);
+
+  /**
+   * Detectar si hay cambios en el formulario
+   */
+  const hasLocalChanges = () => {
+    return (
+      name !== initialState.name ||
+      lastName !== initialState.lastName ||
+      email !== initialState.email ||
+      adress !== initialState.adress ||
+      phone !== initialState.phone
+    );
+  };
 
   /**
    * Validar formulario
    */
   const validateForm = () => {
     const newErrors = {};
+    const onlyNumbers = /^[0-9]+$/;
 
     if (!name || name.trim().length === 0) {
       newErrors.name = 'El nombre es obligatorio';
@@ -56,6 +84,10 @@ const EditCitizen = ({ navigation, route }) => {
     // Phone es obligatorio
     if (!phone || phone.trim().length === 0) {
       newErrors.phone = 'El teléfono es obligatorio';
+    } else if (phone.includes('-')) {
+      newErrors.phone = 'El teléfono debe ser un número positivo (no se aceptan negativos).';
+    } else if (!onlyNumbers.test(phone.trim())) {
+      newErrors.phone = 'El teléfono solo puede contener números.';
     }
 
     setErrors(newErrors);
@@ -66,6 +98,12 @@ const EditCitizen = ({ navigation, route }) => {
    * Guardar cambios
    */
   const handleSave = async () => {
+    // Si no hay cambios, solo cerrar
+    if (!hasLocalChanges()) {
+      navigation.goBack();
+      return;
+    }
+
     if (!validateForm()) {
       Alert.alert('Validación', 'Por favor completa los campos requeridos');
       return;
@@ -89,8 +127,9 @@ const EditCitizen = ({ navigation, route }) => {
         },
       ]);
     } catch (error) {
-      console.error('Error actualizando ciudadano:', error);
-      Alert.alert('Error', 'No se pudo actualizar el ciudadano');
+      console.log('Error actualizando ciudadano:', error);
+      const errorMessage = error?.message || 'No se pudo actualizar el ciudadano';
+      Alert.alert('Error', errorMessage);
     } finally {
       setSaving(false);
     }

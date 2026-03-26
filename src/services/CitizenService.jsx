@@ -15,7 +15,7 @@ export const getCitizens = async () => {
     const data = await get('/Citizen');
     return data || [];
   } catch (error) {
-    console.error('Error obteniendo ciudadanos:', error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
@@ -30,7 +30,7 @@ export const getCitizenByDni = async (dni) => {
     const data = await get(`/Citizen/${dni}`);
     return data;
   } catch (error) {
-    console.error(`Error obteniendo ciudadano ${dni}:`, error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
@@ -61,7 +61,7 @@ export const createCitizen = async (formData) => {
     const response = await post('/Citizen', dtoData);
     return response;
   } catch (error) {
-    console.error('Error creando ciudadano:', error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
@@ -86,7 +86,7 @@ export const updateCitizen = async (dni, formData) => {
     const response = await put(`/Citizen/${dni}`, dtoData);
     return response;
   } catch (error) {
-    console.error(`Error actualizando ciudadano ${dni}:`, error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
@@ -101,7 +101,7 @@ export const deleteCitizen = async (dni) => {
     const response = await deleteRequest(`/Citizen/${dni}`);
     return response;
   } catch (error) {
-    console.error(`Error eliminando ciudadano ${dni}:`, error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };

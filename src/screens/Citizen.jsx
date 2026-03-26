@@ -208,17 +208,28 @@ const Citizen = ({ navigation }) => {
           <ActivityIndicator size="large" color="#428bc4" />
         </View>
       ) : (
-        <FlatList
-          data={citizens}
-          keyExtractor={(item) => item.dni}
-          renderItem={({ item }) => <CitizenCard item={item} />}
-          contentContainerStyle={styles.listContent}
-          refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-          }
-          ListEmptyComponent={renderEmpty()}
-          showsVerticalScrollIndicator={false}
-        />
+        <>
+          {/* Botón de búsqueda avanzada */}
+          <TouchableOpacity
+            style={styles.searchButton}
+            onPress={() => navigation.navigate('CitizenSearch')}
+          >
+            <MaterialCommunityIcons name="magnify" size={20} color="white" />
+            <Text style={styles.searchButtonText}>Búsqueda Avanzada por DNI</Text>
+          </TouchableOpacity>
+
+          <FlatList
+            data={citizens}
+            keyExtractor={(item) => item.dni}
+            renderItem={({ item }) => <CitizenCard item={item} />}
+            contentContainerStyle={styles.listContent}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+            ListEmptyComponent={renderEmpty()}
+            showsVerticalScrollIndicator={false}
+          />
+        </>
       )}
 
       {/* Floating Action Button */}
@@ -338,6 +349,23 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.3,
     shadowRadius: 3,
     elevation: 5,
+  },
+  searchButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#428bc4',
+    marginHorizontal: 12,
+    marginVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 8,
+    justifyContent: 'center',
+    gap: 8,
+  },
+  searchButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: 'white',
   },
 });
 

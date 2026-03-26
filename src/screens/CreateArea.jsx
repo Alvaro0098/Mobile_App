@@ -25,6 +25,8 @@ const CreateArea = ({ navigation }) => {
       newErrors.name = 'El nombre del área es obligatorio';
     } else if (name.trim().length < 3) {
       newErrors.name = 'El nombre debe tener al menos 3 caracteres';
+    } else if (name.trim().length > 100) {
+      newErrors.name = 'El nombre no puede superar 100 caracteres';
     }
 
     setErrors(newErrors);

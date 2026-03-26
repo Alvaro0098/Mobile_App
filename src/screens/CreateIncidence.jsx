@@ -71,12 +71,27 @@ const CreateIncidence = ({ navigation }) => {
   const validateForm = () => {
     const newErrors = {};
 
+    // Fecha
+    if (!date) {
+      newErrors.date = 'La fecha es obligatoria';
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(date);
+      selectedDate.setHours(0, 0, 0, 0);
+      if (selectedDate > today) {
+        newErrors.date = 'No se permite registrar incidencias en el futuro';
+      }
+    }
+
     if (!areaSelected) {
       newErrors.area = 'Selecciona un área';
     }
 
     if (!observacion || observacion.trim().length < 10) {
       newErrors.observacion = 'La observación debe tener al menos 10 caracteres';
+    } else if (observacion.trim().length > 500) {
+      newErrors.observacion = 'La observación no puede superar 500 caracteres';
     }
 
     setErrors(newErrors);

@@ -54,24 +54,39 @@ async function request(endpoint, options = {}) {
 
     // Si la respuesta no es OK, lanzar error
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: response.statusText }));
-      console.error(`❌ Error ${response.status}:`, errorData.message || errorData.error);
+      // Clonar la respuesta antes de leerla para evitar "body stream already read"
+      const responseClone = response.clone();
+      
+      let errorMessage = '';
+      try {
+        // Intentar leer como JSON (por si C# manda un objeto)
+        const errorData = await response.json();
+        errorMessage = typeof errorData === 'string' ? errorData : (errorData.error || errorData.message || errorData.detail || JSON.stringify(errorData));
+      } catch {
+        // Si falla, leer como texto plano desde el clon
+        errorMessage = await responseClone.text();
+      }
+      
+      // Limpiar comillas extras que a veces pone el JSON.parse
+      errorMessage = errorMessage.replace(/^"|"$/g, '');
+      
+      console.log(`⚠️ Error ${response.status} [${options.method || 'GET'} ${endpoint}]:`, errorMessage);
       
       // Si es 401, el token puede estar expirado
       if (response.status === 401) {
-        console.error('🔓 Error 401: Token inválido o expirado. Limpiando asyncStorage...');
+        console.log('🔓 Error 401: Token inválido o expirado. Limpiando asyncStorage...');
         await AsyncStorage.removeItem('userToken');
         await AsyncStorage.removeItem('token');
       }
       
-      throw new Error(`Error ${response.status}: ${errorData.message || errorData.error}`);
+      throw new Error(errorMessage);
     }
 
     // Intentar parsear como JSON
     const data = await response.json().catch(() => null);
     return data;
   } catch (error) {
-    console.error(`API Error [${endpoint}]:`, error.message);
+    console.log(`⚠️  API Error [${endpoint}]:`, error.message);
     throw error;
   }
 }

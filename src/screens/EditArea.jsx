@@ -17,8 +17,26 @@ const EditArea = ({ navigation, route }) => {
   const { area } = route.params;
 
   const [name, setName] = useState(area.name || '');
+  
+  // Initial state for change detection
+  const [initialState, setInitialState] = useState({
+    name: area.name || '',
+  });
+
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
+
+  // Limpiar errores al montar el componente
+  React.useEffect(() => {
+    setErrors({});
+  }, []);
+
+  /**
+   * Detectar si hay cambios en el formulario
+   */
+  const hasLocalChanges = () => {
+    return name !== initialState.name;
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -27,6 +45,8 @@ const EditArea = ({ navigation, route }) => {
       newErrors.name = 'El nombre del área es obligatorio';
     } else if (name.trim().length < 3) {
       newErrors.name = 'El nombre debe tener al menos 3 caracteres';
+    } else if (name.trim().length > 100) {
+      newErrors.name = 'El nombre no puede superar 100 caracteres';
     }
 
     setErrors(newErrors);
@@ -34,6 +54,12 @@ const EditArea = ({ navigation, route }) => {
   };
 
   const handleSave = async () => {
+    // Si no hay cambios, solo cerrar
+    if (!hasLocalChanges()) {
+      navigation.goBack();
+      return;
+    }
+
     if (!validateForm()) {
       Alert.alert('Validación', 'Por favor completa los campos requeridos');
       return;

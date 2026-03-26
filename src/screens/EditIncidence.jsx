@@ -42,6 +42,15 @@ const EditIncidence = ({ navigation, route }) => {
   const [areaSelected, setAreaSelected] = useState(incidence.areaId.toString());
   const [observacion, setObservacion] = useState(incidence.description);
 
+  // Initial state for change detection
+  const [initialState, setInitialState] = useState({
+    date: new Date(incidence.date).toISOString().split('T')[0],
+    tipoSelected: incidence.incidenceType,
+    estadoSelected: incidence.state,
+    areaSelected: incidence.areaId.toString(),
+    observacion: incidence.description,
+  });
+
   // UI state
   const [areas, setAreas] = useState([]);
   const [loadingAreas, setLoadingAreas] = useState(true);
@@ -54,6 +63,8 @@ const EditIncidence = ({ navigation, route }) => {
   // Cargar áreas
   useEffect(() => {
     loadAreas();
+    // Limpiar errores al montar el componente
+    setErrors({});
   }, []);
 
   const loadAreas = async () => {
@@ -73,16 +84,45 @@ const EditIncidence = ({ navigation, route }) => {
   const validateForm = () => {
     const newErrors = {};
 
+    // Fecha
+    if (!date) {
+      newErrors.date = 'La fecha es obligatoria';
+    } else {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const selectedDate = new Date(date);
+      selectedDate.setHours(0, 0, 0, 0);
+      if (selectedDate > today) {
+        newErrors.date = 'No se permite registrar incidencias en el futuro';
+      }
+    }
+
     if (!areaSelected) {
       newErrors.area = 'Selecciona un área';
     }
 
     if (!observacion || observacion.trim().length < 10) {
       newErrors.observacion = 'La observación debe tener al menos 10 caracteres';
+    } else if (observacion.trim().length > 500) {
+      newErrors.observacion = 'La observación no puede superar 500 caracteres';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
+  };
+
+  /**
+   * Detectar si hay cambios en el formulario
+   */
+  const hasLocalChanges = () => {
+    const currentDateStr = date.toISOString().split('T')[0];
+    return (
+      currentDateStr !== initialState.date ||
+      tipoSelected !== initialState.tipoSelected ||
+      estadoSelected !== initialState.estadoSelected ||
+      areaSelected !== initialState.areaSelected ||
+      observacion !== initialState.observacion
+    );
   };
 
   // Manejar cambio de fecha
@@ -97,6 +137,12 @@ const EditIncidence = ({ navigation, route }) => {
 
   // Guardar cambios
   const handleSave = async () => {
+    // Si no hay cambios, solo cerrar
+    if (!hasLocalChanges()) {
+      navigation.goBack();
+      return;
+    }
+
     if (!validateForm()) {
       Alert.alert('Validación', 'Por favor completa los campos requeridos');
       return;

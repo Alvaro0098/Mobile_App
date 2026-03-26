@@ -17,6 +17,7 @@ import EditIncidence from './src/screens/EditIncidence';
 import Citizen from './src/screens/Citizen';
 import CreateCitizen from './src/screens/CreateCitizen';
 import EditCitizen from './src/screens/EditCitizen';
+import CitizenSearch from './src/screens/CitizenSearch';
 import Area from './src/screens/Area';
 import CreateArea from './src/screens/CreateArea';
 import EditArea from './src/screens/EditArea';
@@ -63,7 +64,7 @@ function IncidenceStackNavigator() {
 }
 
 /**
- * Stack de Ciudadanos: permite navegar entre lista, crear y editar
+ * Stack de Ciudadanos: permite navegar entre lista, crear, editar y buscar
  */
 function CitizenStackNavigator() {
   return (
@@ -89,6 +90,13 @@ function CitizenStackNavigator() {
       <Stack.Screen
         name="EditCitizen"
         component={EditCitizen}
+        options={{
+          animationEnabled: true,
+        }}
+      />
+      <Stack.Screen
+        name="CitizenSearch"
+        component={CitizenSearch}
         options={{
           animationEnabled: true,
         }}

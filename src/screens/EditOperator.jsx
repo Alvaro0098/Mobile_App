@@ -9,9 +9,9 @@ import {
   Alert,
   TextInput,
 } from 'react-native';
-import { Picker } from '@react-native-picker/picker';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import TopBar from '../components/TopBar';
+import PositionPicker from '../components/PositionPicker';
 import { updateOperator } from '../services/operatorService';
 
 const EditOperator = ({ navigation, route }) => {
@@ -27,10 +27,39 @@ const EditOperator = ({ navigation, route }) => {
   const [password, setPassword] = useState(''); // Opcional en EDIT
   const [position, setPosition] = useState((operator.position || 0).toString());
 
+  // Initial state for change detection
+  const [initialState, setInitialState] = useState({
+    name: operator.name || '',
+    lastName: operator.lastName || '',
+    email: operator.email || '',
+    phone: operator.phone || '',
+    password: '', // La contraseña siempre comienza vacía en EDIT
+    position: (operator.position || 0).toString(),
+  });
+
   // UI state
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
+
+  // Limpiar errores al montar el componente
+  useEffect(() => {
+    setErrors({});
+  }, []);
+
+  /**
+   * Detectar si hay cambios en el formulario
+   */
+  const hasLocalChanges = () => {
+    return (
+      name !== initialState.name ||
+      lastName !== initialState.lastName ||
+      email !== initialState.email ||
+      phone !== initialState.phone ||
+      password !== initialState.password ||
+      position !== initialState.position
+    );
+  };
 
   /**
    * Validar formulario (sin requerir password en EDIT)
@@ -63,9 +92,16 @@ const EditOperator = ({ navigation, route }) => {
       }
     }
 
-    // Phone (opcional pero validar si se proporciona)
-    if (phone && phone.length > 8) {
-      newErrors.phone = 'El celular no puede tener más de 8 dígitos';
+    // Phone (opcional pero si se proporciona, debe ser válido)
+    if (phone && phone.trim().length > 0) {
+      const onlyNumbers = /^[0-9]+$/;
+      if (phone.includes('-')) {
+        newErrors.phone = 'El teléfono debe ser un número positivo (no se aceptan negativos).';
+      } else if (!onlyNumbers.test(phone.trim())) {
+        newErrors.phone = 'El teléfono solo puede contener números.';
+      } else if (phone.trim().length > 8) {
+        newErrors.phone = 'El teléfono no puede tener más de 8 dígitos';
+      }
     }
 
     setErrors(newErrors);
@@ -76,6 +112,12 @@ const EditOperator = ({ navigation, route }) => {
    * Guardar cambios del operador
    */
   const handleSave = async () => {
+    // Si no hay cambios, solo cerrar
+    if (!hasLocalChanges()) {
+      navigation.goBack();
+      return;
+    }
+
     if (!validateForm()) {
       Alert.alert('Validación', 'Por favor completa los campos requeridos correctamente');
       return;
@@ -101,7 +143,22 @@ const EditOperator = ({ navigation, route }) => {
       ]);
     } catch (error) {
       console.error('Error actualizando operador:', error);
-      Alert.alert('Error', 'No se pudo actualizar el operador');
+      const errorMessage = error?.message || '';
+      
+      // Capturar errores específicos de validación del backend
+      if (errorMessage.includes('Ya existe un operador con DNI')) {
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          dni: 'Este DNI ya está registrado.',
+        }));
+      } else if (errorMessage.includes('Ya existe un operador con N° de Legajo')) {
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          nLegajo: 'Este N° de Legajo ya está registrado.',
+        }));
+      } else {
+        Alert.alert('Error', errorMessage || 'No se pudo actualizar el operador');
+      }
     } finally {
       setSaving(false);
     }
@@ -238,17 +295,11 @@ const EditOperator = ({ navigation, route }) => {
           <Text style={styles.label}>
             Cargo / Rol <Text style={styles.required}>*</Text>
           </Text>
-          <View style={[styles.pickerContainer, errors.position && styles.inputError]}>
-            <Picker
-              selectedValue={position}
-              onValueChange={(itemValue) => setPosition(itemValue)}
-              style={styles.picker}
-            >
-              <Picker.Item label="Operador Básico" value="0" />
-              <Picker.Item label="Admin" value="1" />
-              <Picker.Item label="SysAdmin" value="2" />
-            </Picker>
-          </View>
+          <PositionPicker
+            value={position}
+            onValueChange={setPosition}
+            error={!!errors.position}
+          />
         </View>
 
         {/* Botones */}
@@ -374,10 +425,17 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
-    overflow: 'hidden',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
   },
   picker: {
-    height: 50,
+    height: 56,
+    fontSize: 14,
+    color: '#212529',
+  },
+  pickerItem: {
+    fontSize: 14,
+    color: '#212529',
   },
   buttonContainer: {
     flexDirection: 'row',

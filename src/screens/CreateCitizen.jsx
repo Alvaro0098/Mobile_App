@@ -31,6 +31,7 @@ const CreateCitizen = ({ navigation }) => {
    */
   const validateForm = () => {
     const newErrors = {};
+    const onlyNumbers = /^[0-9]+$/;
 
     if (!name || name.trim().length === 0) {
       newErrors.name = 'El nombre es obligatorio';
@@ -42,6 +43,10 @@ const CreateCitizen = ({ navigation }) => {
 
     if (!dni || dni.trim().length === 0) {
       newErrors.dni = 'El DNI es obligatorio';
+    } else if (dni.includes('-')) {
+      newErrors.dni = 'El DNI debe ser un número positivo (no se aceptan negativos).';
+    } else if (!onlyNumbers.test(dni.trim())) {
+      newErrors.dni = 'El DNI solo puede contener números.';
     }
 
     // Email es obligatorio y debe tener formato válido
@@ -59,6 +64,10 @@ const CreateCitizen = ({ navigation }) => {
     // Phone es obligatorio
     if (!phone || phone.trim().length === 0) {
       newErrors.phone = 'El teléfono es obligatorio';
+    } else if (phone.includes('-')) {
+      newErrors.phone = 'El teléfono debe ser un número positivo (no se aceptan negativos).';
+    } else if (!onlyNumbers.test(phone.trim())) {
+      newErrors.phone = 'El teléfono solo puede contener números.';
     }
 
     setErrors(newErrors);
@@ -93,8 +102,20 @@ const CreateCitizen = ({ navigation }) => {
         },
       ]);
     } catch (error) {
-      console.error('Error creando ciudadano:', error);
-      Alert.alert('Error', 'No se pudo crear el ciudadano');
+      // Detectar si es error de DNI duplicado del backend
+      const errorMessage = error?.message || '';
+      
+      if (errorMessage.includes('Ya existe un ciudadano con DNI')) {
+        // ✅ Error de validación esperado - marcar campo sin Alert
+        setErrors(prevErrors => ({
+          ...prevErrors,
+          dni: 'Este DNI ya está registrado. Por favor, ingresá uno nuevo.',
+        }));
+      } else {
+        // ❌ Otros errores - mostrar Alert
+        console.log('Error:', errorMessage);
+        Alert.alert('Error', errorMessage || 'No se pudo crear el ciudadano');
+      }
     } finally {
       setSaving(false);
     }

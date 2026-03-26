@@ -15,7 +15,7 @@ export const getOperators = async () => {
     const data = await get('/Operator');
     return data || [];
   } catch (error) {
-    console.error('Error obteniendo operadores:', error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
@@ -30,7 +30,7 @@ export const getOperatorById = async (id) => {
     const data = await get(`/Operator/${id}`);
     return data;
   } catch (error) {
-    console.error(`Error obteniendo operador ${id}:`, error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
@@ -65,7 +65,8 @@ export const createOperator = async (formData) => {
     const response = await post('/Operator', dtoData);
     return response;
   } catch (error) {
-    console.error('Error creando operador:', error);
+    // Relanzar el error sin console.error para no interferir con React Native
+    // El componente CreateOperator.jsx manejará el error correctamente
     throw error;
   }
 };
@@ -100,7 +101,7 @@ export const updateOperator = async (dni, formData) => {
     const response = await put(`/Operator/${dni}`, dtoData);
     return response;
   } catch (error) {
-    console.error(`Error actualizando operador ${dni}:`, error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
@@ -115,7 +116,7 @@ export const deleteOperator = async (id) => {
     const response = await deleteRequest(`/Operator/${id}`);
     return response;
   } catch (error) {
-    console.error(`Error eliminando operador ${id}:`, error);
+    // Relanzar sin console.error para no interferir
     throw error;
   }
 };
